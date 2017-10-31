@@ -16,3 +16,5 @@ def init_ship_head(width, height):
     y = randint(0, height-1)
     return Point(x, y)
 
+def just_test():
+    pass
