@@ -23,5 +23,5 @@ def init_head(width, height):
     return Point(x, y)
 
 def init_direction():
-    choice(DIRECTION)
+    return choice(DIRECTION)
 

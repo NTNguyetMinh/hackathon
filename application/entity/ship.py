@@ -28,6 +28,3 @@ class Ship(object):
 
     def piece(self):
         return self.ship_meta['pieces']
-
-    def is_shipwreck(self):
-        pass
