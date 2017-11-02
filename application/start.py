@@ -19,7 +19,7 @@ class Start(object):
                 'type': ship.type,
                 'positions': [{'x': position.x, 'y': position.y} for position in ship.positions]
             })
-        response = json.dumps(ships)
+        response = json.dumps({'ships': ships})
         for y in range(board.height, -1, -1):
             line = ''
             for x in range(0, board.width):

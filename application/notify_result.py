@@ -17,5 +17,5 @@ class NotifyResult(object):
 
         # TODO store fire control to redis
 
-        return json.dumps({'result': True})
+        return json.dumps({'success': True})
 

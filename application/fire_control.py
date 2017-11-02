@@ -7,15 +7,20 @@ from application.utils.utils import (
     remove_occupied_position,
     pick_random,
     is_already_occupied,
-    is_double_occupied
+    is_double_occupied,
+    get_chain_position
 )
 from application.utils.const import (
     MAX_ATTEMPT,
     PLAYER_ID,
-    HIT
+    HIT,
+    VERTICAL,
+    HORIZONTAL,
+    OIL_RIG
 )
 from application.entity.point import Point
 from application.entity.enemy_ship import EnemyShip
+from application.entity.ship import Ship
 
 
 class FireControl(object):
@@ -87,3 +92,22 @@ class FireControl(object):
 
         if shot_result.get('recognizedWholeShip'):
             self.shipwreck(shot_result['recognizedWholeShip'])
+
+    def get_fit_ships(self):
+        pass
+
+    def get_chain_hit(self):
+        for position in self.hit_positions:
+            chain_hits = get_chain_position(position, self.hit_positions)
+
+    def fit_carrier(self, positions):
+        position = positions[0]
+        ships = []
+        for ship_type in self.remain_ship_type():
+            ships.append(Ship(ship_type, position, HORIZONTAL))
+            if ship_type != OIL_RIG:
+                ships.append(Ship(ship_type, position, VERTICAL))
+
+    def remain_ship_type(self):
+        remain_types = [ship.type for ship in self.remain_ships]
+        return list(set(remain_types))

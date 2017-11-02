@@ -22,4 +22,4 @@ class Invite(object):
         # TODO store fire control to redis
         # TODO store board to redis
 
-        return json.dumps({'result': True})
+        return json.dumps({'success': True})
