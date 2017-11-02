@@ -3,11 +3,12 @@ from __future__ import (
     unicode_literals,
 )
 import json
+from application.config.redis import Base
 from application.entity.board import Board
 from application.fire_control import FireControl
 from flask import request
 
-class Invite(object):
+class Invite(Base):
 
     def execute(self):
         body = request.get_json()
@@ -21,5 +22,7 @@ class Invite(object):
 
         # TODO store fire control to redis
         # TODO store board to redis
+        self.db.set('board', board)
+        self.db.set('fire_control', fire_control)
 
         return json.dumps({'success': True})

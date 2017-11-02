@@ -8,9 +8,9 @@ from application.notify_result import NotifyResult
 from application.start import Start
 from application.turn import Turn
 
-def setup_routes(app):
+def setup_routes(app, db):
 
-    app.add_url_rule('/invite', 'invite', Invite().execute, methods=['POST'])
-    app.add_url_rule('/start', 'start', Start().execute, methods=['POST'])
-    app.add_url_rule('/turn', 'turn', Turn().execute, methods=['POST'])
-    app.add_url_rule('/notify_result', 'notify_result', NotifyResult().execute, methods=['POST'])
+    app.add_url_rule('/invite', 'invite', Invite(db).execute, methods=['POST'])
+    app.add_url_rule('/start', 'start', Start(db).execute, methods=['POST'])
+    app.add_url_rule('/turn', 'turn', Turn(db).execute, methods=['POST'])
+    app.add_url_rule('/notify', 'notify_result', NotifyResult(db).execute, methods=['POST'])

@@ -3,15 +3,16 @@ from __future__ import (
     unicode_literals,
 )
 import json
+from application.config.redis import Base
 from application.entity.point import Point
 from application.utils.utils import is_already_occupied
 
-class Start(object):
+class Start(Base):
 
     def execute(self):
 
         # TODO get board from redis
-        board = None
+        board = self.db.get('board')
 
         ships = []
         for ship in board.current_ship:

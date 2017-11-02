@@ -4,10 +4,11 @@ from __future__ import (
 )
 
 from application.config.routes import setup_routes
+from application.config.redis import *
 from flask import Flask
 app = Flask(__name__)
 
-setup_routes(app)
+setup_routes(app, db)
 
 if __name__ == '__main__':
     app.run()
