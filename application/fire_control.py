@@ -5,26 +5,24 @@ from __future__ import (
 from application.utils.utils import (
     get_near_positions,
     remove_occupied_position,
-    pick_random
+    pick_random,
+    is_already_occupied,
+    is_double_occupied
 )
-
+from application.utils.const import MAX_ATTEMPT
 from application.entity.point import Point
 from application.entity.enemy_ship import EnemyShip
 
 
-class EnemyBoard(object):
+class FireControl(object):
     def __init__(self, width, height, ships):
-        self.width = width
-        self.height = height
-        self.valid_positions = []
         self.remain_positions = []
         self.fired_positions = []
         self.hit_positions = []
-        self.remain_ship = []
+        self.remain_ships = []
         for x in range(width):
             for y in range(height):
                 if (x + y) % 2 == 0:
-                    self.valid_positions.append(Point(x, y))
                     self.remain_positions.append(Point(x, y))
 
         self.init_ships(ships)
@@ -33,11 +31,12 @@ class EnemyBoard(object):
         for ship_data in ships:
             for index in range(int(ship_data['quantity'])):
                 ship = EnemyShip(ship_data['type'])
-                self.remain_ship.append(ship)
+                self.remain_ships.append(ship)
 
     def fire(self):
         fire_point = self.get_high_expect_positions()
-        self.remain_positions.remove(fire_point)
+        if is_already_occupied(fire_point, self.remain_positions):
+            self.remain_positions.remove(fire_point)
         self.fired_positions.append(fire_point)
         return fire_point
 
@@ -49,14 +48,26 @@ class EnemyBoard(object):
                 high_expect_positions = remove_occupied_position(near_positions, self.fired_positions)
                 if high_expect_positions:
                     break
-        else:
-            return self.fire_random()
         if not high_expect_positions:
             return self.fire_random()
         return pick_random(high_expect_positions)
 
     def fire_random(self):
-        fire_point = pick_random(self.remain_positions)
-        self.remain_positions.remove(fire_point)
-        self.fired_positions.append(fire_point)
-        return fire_point
+        for i in range(0, MAX_ATTEMPT):
+            fire = pick_random(self.remain_positions)
+            near_positions = get_near_positions(fire)
+            if not is_double_occupied(near_positions, self.fired_positions):
+                return fire
+        return pick_random(self.remain_positions)
+
+    def shipwreck(self, recognized_ship):
+        # remove this ship in remain ship
+        for ship in self.remain_ships:
+            if ship.type == recognized_ship['type']:
+                self.remain_ships.remove(ship)
+                break
+        ship_positions = []
+        for position in recognized_ship['positions']:
+            ship_positions.append(Point(position['x'], position['y']))
+
+        self.hit_positions = remove_occupied_position(self.hit_positions, ship_positions)

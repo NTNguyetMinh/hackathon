@@ -9,6 +9,7 @@ HORIZONTAL = 'horizontal'
 VERTICAL = 'vertical'
 
 DIRECTION = [HORIZONTAL, VERTICAL]
+MAX_ATTEMPT = 500
 
 SHIP = {
     CARRIER: {

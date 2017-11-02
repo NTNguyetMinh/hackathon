@@ -5,7 +5,7 @@ from __future__ import (
 import json
 from application.entity.board import Board
 from application.entity.point import Point
-from application.utils.utils import is_already_allocate
+from application.utils.utils import is_already_occupied
 from flask import request
 
 class Invite(object):
@@ -25,10 +25,10 @@ class Invite(object):
                 'positions': [{'x': position.x, 'y': position.y} for position in ship.position]
             })
         response = json.dumps(ships)
-        for y in range(game_rule['boardHeight'] + 1, 0, -1):
+        for y in range(game_rule['boardHeight'], -1, -1):
             line = ''
-            for x in range(0, game_rule['boardWidth'] + 1):
-                is_allocated = is_already_allocate(Point(x, y), board.allocates)
+            for x in range(0, game_rule['boardWidth']):
+                is_allocated = is_already_occupied(Point(x, y), board.allocates)
                 point = 'x' if is_allocated else ' '
                 line = line + ' ' + point
 

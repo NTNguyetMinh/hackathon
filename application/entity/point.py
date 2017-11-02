@@ -9,9 +9,13 @@ class Point(object):
         self.x = x
         self.y = y
         self.fire = False
+        self.hit = False
 
     def is_fired(self):
         return self.fire
 
     def fire(self):
         self.fire = True
+
+    def is_hit(self):
+        return self.hit

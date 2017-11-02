@@ -3,12 +3,11 @@ from __future__ import (
     unicode_literals,
 )
 from application.utils.const import (
-    SHIP
+    SHIP,
+    DIRECTION
 )
 from application.entity.point import Point
-from application.utils.utils import (
-    init_direction
-)
+from random import choice
 
 class Ship(object):
 
@@ -16,15 +15,19 @@ class Ship(object):
         self.type = ship_type
         self.head = head
         self.ship_meta = SHIP[self.type]
-        self.position = []
-        self.ship_direct = init_direction()
-        self.init_position()
+        self.positions = []
+        self.ship_direct = self.init_direction()
+        self.init_positions()
 
-    def init_position(self):
+    def init_positions(self):
         for piece in self.ship_meta[self.ship_direct]:
             x = self.head.x + piece['x']
             y = self.head.y + piece['y']
-            self.position.append(Point(x, y))
+            self.positions.append(Point(x, y))
 
     def piece(self):
         return self.ship_meta['pieces']
+
+    @staticmethod
+    def init_direction():
+        return choice(DIRECTION)
