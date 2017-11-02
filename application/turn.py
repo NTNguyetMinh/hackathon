@@ -8,7 +8,17 @@ from flask import request
 class Turn(object):
 
     def execute(self):
-        body = request.get_json()
+        # TODO get fire control from redis
+        fire_control = None
 
-        return json.dumps({'result': True})
+        fire_point = fire_control.fire()
+
+        # TODO store fire control to redis
+
+        response = {'firePosition': {
+            'x': fire_point.x,
+            'y': fire_point.y
+        }}
+
+        return json.dumps(response)
 

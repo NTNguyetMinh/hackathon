@@ -11,6 +11,10 @@ VERTICAL = 'vertical'
 DIRECTION = [HORIZONTAL, VERTICAL]
 MAX_ATTEMPT = 500
 
+PLAYER_ID = 'Ez Bot'
+HIT = 'HIT'
+MISS = 'MISS'
+
 SHIP = {
     CARRIER: {
         'pieces': 5,

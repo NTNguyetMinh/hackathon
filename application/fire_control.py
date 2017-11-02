@@ -9,7 +9,11 @@ from application.utils.utils import (
     is_already_occupied,
     is_double_occupied
 )
-from application.utils.const import MAX_ATTEMPT
+from application.utils.const import (
+    MAX_ATTEMPT,
+    PLAYER_ID,
+    HIT
+)
 from application.entity.point import Point
 from application.entity.enemy_ship import EnemyShip
 
@@ -71,3 +75,15 @@ class FireControl(object):
             ship_positions.append(Point(position['x'], position['y']))
 
         self.hit_positions = remove_occupied_position(self.hit_positions, ship_positions)
+
+    def handle_fire_result(self, response):
+        shot_result = response['shotResult']
+        if shot_result['playerId'] != PLAYER_ID:
+            return True
+
+        if shot_result['status'] == HIT:
+            shot_position = shot_result['position']
+            self.hit_positions.append(Point(shot_position['x'], shot_position['y']))
+
+        if shot_result.get('recognizedWholeShip'):
+            self.shipwreck(shot_result['recognizedWholeShip'])
