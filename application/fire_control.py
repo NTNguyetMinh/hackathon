@@ -22,7 +22,9 @@ from application.utils.const import (
 from application.entity.point import Point
 from application.entity.enemy_ship import EnemyShip
 from application.entity.ship import Ship
+import logging
 
+logger = logging.getLogger('werkzeug')
 
 class FireControl(object):
     def __init__(self, width, height, ships):
@@ -36,7 +38,7 @@ class FireControl(object):
             for y in range(height):
                 if (x + y) % 2 == 0:
                     self.remain_positions.append(Point(x, y))
-
+        logger.info('init fire control')
         self.init_ships(ships)
 
     def init_ships(self, ships):

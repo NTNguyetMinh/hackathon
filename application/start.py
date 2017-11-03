@@ -3,17 +3,19 @@ from __future__ import (
     unicode_literals,
 )
 import json
+import logging
 from flask import request
 from application.config.redis import Base
 from application.entity.point import Point
 from application.utils.utils import is_already_occupied
+logger = logging.getLogger('werkzeug')
 
 class Start(Base):
 
     def execute(self):
 
         body = request.get_json()
-        self.logger.info('Start request: {}'.format(body))
+        logger.info('Start request: {}'.format(body))
         print body
 
         # TODO get board from redis

@@ -5,12 +5,13 @@ from __future__ import (
 import json
 from flask import request
 from application.config.redis import Base
-
+import logging
+logger = logging.getLogger('werkzeug')
 class NotifyResult(Base):
 
     def execute(self):
         body = request.get_json()
-        self.logger.info('Notify request: {}'.format(body))
+        logger.info('Notify request: {}'.format(body))
         print body
 
         # TODO get fire control from redis

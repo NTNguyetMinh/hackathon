@@ -7,13 +7,15 @@ from application.config.redis import Base
 from application.entity.board import Board
 from application.fire_control import FireControl
 from flask import request
+import logging
 
+logger = logging.getLogger('werkzeug')
 
 class Invite(Base):
 
     def execute(self):
         body = request.get_json()
-        self.logger.info('Invite request: {}'.format(body))
+        logger.info('Invite request: {}'.format(body))
         #
         print body
 
