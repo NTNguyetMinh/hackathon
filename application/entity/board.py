@@ -7,7 +7,8 @@ from application.utils.utils import (
     init_position,
     is_already_occupied,
     get_near_positions,
-    is_double_occupied
+    is_double_occupied,
+    is_valid_position
 )
 from application.utils.const import MAX_ATTEMPT
 
@@ -48,12 +49,12 @@ class Board(object):
             ship = Ship(ship_type, ship_head)
 
             # check position of ship is valid or not
-            if self.is_valid_position(ship):
+            if self.is_valid_ship(ship):
                 return ship
         else:
             return None
 
-    def is_valid_position(self, ship):
+    def is_valid_ship(self, ship):
         """
         Check position of ship is overlap other ship or not.
         Optional: support nice position
@@ -62,7 +63,7 @@ class Board(object):
         """
         for piece in ship.positions:
             # Does not outside board
-            if piece.x >= self.width or piece.y >= self.height:
+            if not is_valid_position(piece, self.width, self.height):
                 return False
             # Does not overlap other ship
             if is_already_occupied(piece, self.allocates):

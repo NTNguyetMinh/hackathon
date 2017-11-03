@@ -3,13 +3,13 @@ from __future__ import (
     unicode_literals,
 )
 from application.utils.utils import (
-    get_near_positions,
-    remove_occupied_position,
-    pick_random,
     is_already_occupied,
+    get_near_positions,
     is_double_occupied,
-    get_chain_position,
-    remove_position
+    is_valid_position,
+    remove_position,
+    remove_occupied_position,
+    pick_random
 )
 from application.utils.const import (
     MAX_ATTEMPT,
@@ -46,7 +46,7 @@ class FireControl(object):
                 self.remain_ships.append(ship)
 
     def fire(self):
-        fire_point = self.get_high_expect_positions()
+        fire_point = self.get_high_expect_positions_2()
         if is_already_occupied(fire_point, self.remain_positions):
             remove_position(fire_point, self.remain_positions)
         self.fired_positions.append(fire_point)
@@ -96,21 +96,53 @@ class FireControl(object):
         if shot_result.get('recognizedWholeShip'):
             self.shipwreck(shot_result['recognizedWholeShip'])
 
-    def get_fit_ships(self):
-        pass
+    # def get_chain_hit(self):
+    #     chain_hits = get_chain_position(self.hit_positions[0], self.hit_positions, self.width, self.height)
+    #     chain_hits.append(self.hit_positions[0])
+    #     return chain_hits
 
-    def get_chain_hit(self):
+    def get_high_expect_positions_2(self):
+        remain_positions = []
         for position in self.hit_positions:
-            chain_hits = get_chain_position(position, self.hit_positions)
-
-    def fit_carrier(self, positions):
-        position = positions[0]
-        ships = []
-        for ship_type in self.remain_ship_type():
-            ships.append(Ship(ship_type, position, HORIZONTAL))
-            if ship_type != OIL_RIG:
-                ships.append(Ship(ship_type, position, VERTICAL))
+            ships = []
+            for ship_type in self.remain_ship_type():
+                ship = Ship(ship_type, position, HORIZONTAL)
+                remain_position = self.get_remain_position(ship)
+                if remain_position:
+                    remain_positions.append(remain_position)
+                    ships.append(ship)
+                ship = Ship(ship_type, position, VERTICAL)
+                remain_position = self.get_remain_position(ship)
+                if ship_type != OIL_RIG and remain_position:
+                    remain_positions.append(remain_position)
+                    ships.append(ship)
+        if remain_positions:
+            remain_positions.sort(key=lambda tub: len(tub))
+            return remain_positions[0][0]
+        return self.fire_random()
 
     def remain_ship_type(self):
         remain_types = [ship.type for ship in self.remain_ships]
         return list(set(remain_types))
+
+    def get_remain_position(self, ship):
+        """
+        Check position of ship is valid on board or not
+        And position of this ship is fire but not hit
+        And must one piece of ship is not fire yet
+        :param ship:
+        :return:
+        """
+        remain_position = []
+        if not remove_occupied_position(self.hit_positions, ship.positions):
+            return remain_position
+        for position in ship.positions:
+            # Does not outside board
+            if not is_valid_position(position, self.width, self.height):
+                return []
+            if not is_already_occupied(position, self.hit_positions) and \
+                    is_already_occupied(position, self.fired_positions):
+                return []
+            if is_already_occupied(position, self.remain_positions):
+                remain_position.append(position)
+        return remain_position
