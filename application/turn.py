@@ -10,7 +10,7 @@ class Turn(Base):
 
     def execute(self):
         body = request.get_json()
-
+        self.logger.info('Turn request: {}'.format(body))
         print body
         # TODO get fire control from redis
         fire_control = self.db.get('fire_control')

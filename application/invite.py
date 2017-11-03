@@ -8,11 +8,13 @@ from application.entity.board import Board
 from application.fire_control import FireControl
 from flask import request
 
+
 class Invite(Base):
 
     def execute(self):
         body = request.get_json()
-
+        self.logger.info('Invite request: {}'.format(body))
+        #
         print body
 
         session_id = body['sessionId']

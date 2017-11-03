@@ -13,7 +13,7 @@ class Start(Base):
     def execute(self):
 
         body = request.get_json()
-
+        self.logger.info('Start request: {}'.format(body))
         print body
 
         # TODO get board from redis

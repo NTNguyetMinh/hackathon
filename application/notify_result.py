@@ -10,7 +10,7 @@ class NotifyResult(Base):
 
     def execute(self):
         body = request.get_json()
-
+        self.logger.info('Notify request: {}'.format(body))
         print body
 
         # TODO get fire control from redis
