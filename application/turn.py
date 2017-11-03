@@ -15,9 +15,10 @@ class Turn(Base):
         print body
         # TODO get fire control from redis
         fire_control = self.db.get('fire_control')
+        fire_control.logger = self.logger
 
         fire_point = fire_control.fire()
-
+        fire_control.logger = None
         # TODO store fire control to redis
         self.db.set('fire_control', fire_control)
 
