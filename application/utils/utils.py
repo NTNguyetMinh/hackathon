@@ -37,6 +37,7 @@ def is_valid_position(position, width, height):
         return False
     return True
 
+
 def remove_position(position, occupied):
     for allocated in occupied:
         if allocated.x == position.x and allocated.y == position.y:
@@ -53,10 +54,12 @@ def is_double_occupied(positions, occupied):
             return True
     return False
 
+
 def pick_random(available):
     index = randrange(len(available))
     return available[index]
 
-def get_chain_position(position, chains):
-    near_positions = get_near_positions(position)
+
+def get_chain_position(position, chains, width, height):
+    near_positions = get_near_positions(position, width, height)
     return [point for point in chains if is_already_occupied(point, near_positions)]
