@@ -68,18 +68,17 @@ class Board(object):
             if is_already_occupied(piece, self.allocates):
                 return False
             # Does not near any ship
-            if not self.is_nice_position(piece, ship):
+            if not self.is_nice_position(piece):
                 return False
         return True
 
-    def is_nice_position(self, position, ship):
+    def is_nice_position(self, position):
         """
         A position is nice when it does not near any ships.
         :param position: A position need to check
-        :param ship: Ship has this position
         :return:
         """
-        nears_position = get_near_positions(position)
+        nears_position = get_near_positions(position, self.width, self.height)
         if is_double_occupied(nears_position, self.allocates):
             return False
         return True

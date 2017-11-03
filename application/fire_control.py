@@ -8,7 +8,8 @@ from application.utils.utils import (
     pick_random,
     is_already_occupied,
     is_double_occupied,
-    get_chain_position
+    get_chain_position,
+    remove_position
 )
 from application.utils.const import (
     MAX_ATTEMPT,
@@ -25,6 +26,8 @@ from application.entity.ship import Ship
 
 class FireControl(object):
     def __init__(self, width, height, ships):
+        self.width = width
+        self.height = height
         self.remain_positions = []
         self.fired_positions = []
         self.hit_positions = []
@@ -45,7 +48,7 @@ class FireControl(object):
     def fire(self):
         fire_point = self.get_high_expect_positions()
         if is_already_occupied(fire_point, self.remain_positions):
-            self.remain_positions.remove(fire_point)
+            remove_position(fire_point, self.remain_positions)
         self.fired_positions.append(fire_point)
         return fire_point
 
@@ -53,7 +56,7 @@ class FireControl(object):
         high_expect_positions = []
         if self.hit_positions:
             for position in self.hit_positions:
-                near_positions = get_near_positions(position)
+                near_positions = get_near_positions(position, self.width, self.height)
                 high_expect_positions = remove_occupied_position(near_positions, self.fired_positions)
                 if high_expect_positions:
                     break
@@ -64,7 +67,7 @@ class FireControl(object):
     def fire_random(self):
         for i in range(0, MAX_ATTEMPT):
             fire = pick_random(self.remain_positions)
-            near_positions = get_near_positions(fire)
+            near_positions = get_near_positions(fire, self.width, self.height)
             if not is_double_occupied(near_positions, self.fired_positions):
                 return fire
         return pick_random(self.remain_positions)
@@ -79,7 +82,7 @@ class FireControl(object):
         for position in recognized_ship['positions']:
             ship_positions.append(Point(position['x'], position['y']))
 
-        self.hit_positions = remove_occupied_position(self.hit_positions, ship_positions)
+        self.hit_positions = remove_occupied_position(ship_positions, self.hit_positions)
 
     def handle_fire_result(self, response):
         shot_result = response['shotResult']

@@ -11,6 +11,8 @@ class NotifyResult(Base):
     def execute(self):
         body = request.get_json()
 
+        print body
+
         # TODO get fire control from redis
         fire_control = self.db.get('fire_control')
 

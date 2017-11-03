@@ -22,11 +22,25 @@ def init_position(width, height):
     return Point(x, y)
 
 
-def get_near_positions(position):
-    return [Point(position.x, position.y + 1),
-            Point(position.x, position.y - 1),
-            Point(position.x + 1, position.y),
-            Point(position.x - 1, position.y)]
+def get_near_positions(position, width, height):
+    near_positions = [Point(position.x, position.y + 1),
+                      Point(position.x, position.y - 1),
+                      Point(position.x + 1, position.y),
+                      Point(position.x - 1, position.y)]
+    return [near for near in near_positions if is_valid_position(near, width, height)]
+
+
+def is_valid_position(position, width, height):
+    if position.x >= width or position.y >= height:
+        return False
+    if position.x < 0 or position.y < 0:
+        return False
+    return True
+
+def remove_position(position, occupied):
+    for allocated in occupied:
+        if allocated.x == position.x and allocated.y == position.y:
+            occupied.remove(allocated)
 
 
 def remove_occupied_position(positions, occupied):

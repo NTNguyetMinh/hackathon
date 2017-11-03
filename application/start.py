@@ -3,6 +3,7 @@ from __future__ import (
     unicode_literals,
 )
 import json
+from flask import request
 from application.config.redis import Base
 from application.entity.point import Point
 from application.utils.utils import is_already_occupied
@@ -10,6 +11,10 @@ from application.utils.utils import is_already_occupied
 class Start(Base):
 
     def execute(self):
+
+        body = request.get_json()
+
+        print body
 
         # TODO get board from redis
         board = self.db.get('board')

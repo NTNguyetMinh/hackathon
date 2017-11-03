@@ -13,6 +13,8 @@ class Invite(Base):
     def execute(self):
         body = request.get_json()
 
+        print body
+
         session_id = body['sessionId']
         game_rule = body['gameRule']
         board = Board(game_rule['boardWidth'], game_rule['boardHeight'])
