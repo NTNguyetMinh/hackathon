@@ -199,6 +199,11 @@ class FireControl(object):
         return line
 
     def get_shot_coordinates(self):
+        """
+        Use this
+        http://christopherstoll.org/2012/06/battleship-ai-algorithm-using-dynamic.html
+        :return:
+        """
         high_score_n = 5
         high_score_xs = [0, 0, 0, 0, 0, 0]
         high_score_ys = [0, 0, 0, 0, 0, 0]
