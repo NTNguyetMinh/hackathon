@@ -63,3 +63,4 @@ def pick_random(available):
 def get_chain_position(position, chains, width, height):
     near_positions = get_near_positions(position, width, height)
     return [point for point in chains if is_already_occupied(point, near_positions)]
+

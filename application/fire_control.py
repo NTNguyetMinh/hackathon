@@ -17,14 +17,17 @@ from application.utils.const import (
     HIT,
     VERTICAL,
     HORIZONTAL,
-    OIL_RIG
+    OIL_RIG,
+    SHIP
 )
 from application.entity.point import Point
 from application.entity.enemy_ship import EnemyShip
 from application.entity.ship import Ship
 import logging
+import json
 
 logger = logging.getLogger('werkzeug')
+
 
 class FireControl(object):
     def __init__(self, width, height, ships):
@@ -48,11 +51,7 @@ class FireControl(object):
                 self.remain_ships.append(ship)
 
     def fire(self):
-        fire_point = self.get_high_expect_positions()
-        if is_already_occupied(fire_point, self.remain_positions):
-            remove_position(fire_point, self.remain_positions)
-        self.fired_positions.append(fire_point)
-        return fire_point
+        return self.get_high_expect_positions()
 
     def get_nearby_positions(self):
         high_expect_positions = []
@@ -90,7 +89,11 @@ class FireControl(object):
         shot_result = response['shotResult']
         if shot_result['playerId'] != PLAYER_ID:
             return True
-
+        shot_position = shot_result['position']
+        fire_point = Point(shot_position['x'], shot_position['y'])
+        if is_already_occupied(fire_point, self.remain_positions):
+            remove_position(fire_point, self.remain_positions)
+        self.fired_positions.append(fire_point)
         if shot_result['status'] == HIT:
             shot_position = shot_result['position']
             self.hit_positions.append(Point(shot_position['x'], shot_position['y']))
@@ -107,21 +110,24 @@ class FireControl(object):
         remain_positions = []
         for delta in range(0, 5):
             for position in self.hit_positions:
-                ships = []
                 for ship_type in self.remain_ship_type():
-                    ship = Ship(ship_type, position, HORIZONTAL)
-                    remain_position = self.get_remain_position(ship, delta)
-                    if remain_position:
-                        remain_positions.append(remain_position)
-                        ships.append(ship)
-                    ship = Ship(ship_type, position, VERTICAL)
-                    remain_position = self.get_remain_position(ship, delta)
-                    if ship_type != OIL_RIG and remain_position:
-                        remain_positions.append(remain_position)
-                        ships.append(ship)
-        logger.info('Remain positions: {}'.format(remain_positions))
+                    for ship_start in SHIP[ship_type][HORIZONTAL]:
+                        ship = Ship(ship_type, position, HORIZONTAL, ship_start)
+                        remain_position = self.get_remain_position(ship, delta)
+                        if remain_position:
+                            remain_positions.append(remain_position)
+                    for ship_start in SHIP[ship_type][VERTICAL]:
+                        ship = Ship(ship_type, position, VERTICAL, ship_start)
+                        remain_position = self.get_remain_position(ship, delta)
+                        if ship_type != OIL_RIG and remain_position:
+                            remain_positions.append(remain_position)
+            if remain_positions:
+                logger.info('Remain positions: {}'.format(len(remain_positions)))
+                break
+        # logger.info('Remain positions: {}'.format(render_position(remain_positions, self.width, self.height)))
+        remain_positions.sort(key=lambda tub: len(tub))
+        self.render_position(remain_positions)
         if remain_positions:
-            remain_positions.sort(key=lambda tub: len(tub))
             return remain_positions[0][0]
         return self.get_nearby_positions()
 
@@ -139,6 +145,8 @@ class FireControl(object):
         """
         remain_position = []
         notin_ship = remove_occupied_position(self.hit_positions, ship.positions)
+        if ship.type == 'CV':
+            print 1
         if len(notin_ship) > delta:
             return remain_position
         for position in ship.positions:
@@ -151,3 +159,25 @@ class FireControl(object):
             if not is_already_occupied(position, self.fired_positions):
                 remain_position.append(position)
         return remain_position
+
+    def render_position(self, positions):
+        remain = positions[0] if positions else []
+        for y in range(self.height, -1, -1):
+            line = 'y:' + str(y) + ' '
+            for x in range(0, self.width):
+                if is_already_occupied(Point(x, y), remain):
+                    line += '  v'
+                elif is_already_occupied(Point(x, y), self.hit_positions):
+                    line += '  o'
+                elif is_already_occupied(Point(x, y), self.fired_positions):
+                    line += '  x'
+                else:
+                    line += '   '
+
+            print line
+        line = 'x:  '
+        for x in range(0, self.width):
+            line += '  ' + str(x)
+        print line
+
+        return line
