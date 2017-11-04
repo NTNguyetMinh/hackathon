@@ -24,7 +24,6 @@ from application.entity.point import Point
 from application.entity.enemy_ship import EnemyShip
 from application.entity.ship import Ship
 import logging
-import json
 
 logger = logging.getLogger('werkzeug')
 
@@ -37,6 +36,12 @@ class FireControl(object):
         self.fired_positions = []
         self.hit_positions = []
         self.remain_ships = []
+        self.high_prioritize = []
+
+        # TODO use for data mining
+        self.history_hit = []
+
+        self.init_high_prioritize(width, height)
         for x in range(width):
             for y in range(height):
                 if (x + y) % 2 == 0:
@@ -50,7 +55,19 @@ class FireControl(object):
                 ship = EnemyShip(ship_data['type'])
                 self.remain_ships.append(ship)
 
+    def init_high_prioritize(self, width, height):
+        half_width = int(width/2)
+        half_height = int(height/2)
+        width -= 1
+        height -= 1
+        self.high_prioritize = [Point(0, 0), Point(0, half_height), Point(0, height),
+                                Point(width, 0), Point(width, half_height), Point(width, height),
+                                Point(half_width, 0), Point(half_width, half_height), Point(half_width, height)]
+
     def fire(self):
+        next_fire = self.mining_data()
+        if next_fire:
+            return next_fire
         return self.get_high_expect_positions()
 
     def get_nearby_positions(self):
@@ -66,6 +83,10 @@ class FireControl(object):
         return pick_random(high_expect_positions)
 
     def fire_random(self):
+        if self.high_prioritize:
+            next_shot = self.high_prioritize.pop(0)
+            if not is_already_occupied(next_shot, self.fired_positions):
+                return next_shot
         for i in range(0, MAX_ATTEMPT):
             fire = pick_random(self.remain_positions)
             near_positions = get_near_positions(fire, self.width, self.height)
@@ -95,8 +116,8 @@ class FireControl(object):
             remove_position(fire_point, self.remain_positions)
         self.fired_positions.append(fire_point)
         if shot_result['status'] == HIT:
-            shot_position = shot_result['position']
-            self.hit_positions.append(Point(shot_position['x'], shot_position['y']))
+            self.history_hit.append(fire_point)
+            self.hit_positions.append(fire_point)
 
         if shot_result.get('recognizedWholeShip'):
             self.shipwreck(shot_result['recognizedWholeShip'])
@@ -181,3 +202,11 @@ class FireControl(object):
         print line
 
         return line
+
+    def mining_data(self):
+        """
+        Use mining data here
+        :return: - None: not found anything useful
+        """
+        # TODO chi viet ham mining data o day nhe
+        return None
