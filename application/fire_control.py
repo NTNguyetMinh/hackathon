@@ -20,6 +20,7 @@ from application.utils.const import (
     OIL_RIG,
     SHIP
 )
+from application.entity.score import Score
 from application.entity.point import Point
 from application.entity.enemy_ship import EnemyShip
 from application.entity.ship import Ship
@@ -202,6 +203,13 @@ class FireControl(object):
         print line
 
         return line
+
+    def dynamic_matrix(self):
+        self.matrix = [[0 for x in range(self.width)] for y in range(self.height)]
+        for x in range(self.width):
+            for y in range(self.height):
+                if not self.matrix[x][y]:
+                    newXval = 0
 
     def mining_data(self):
         """
