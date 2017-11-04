@@ -11,20 +11,14 @@ from application.utils.utils import (
     remove_occupied_position,
     pick_random
 )
-from application.utils.const import (
-    MAX_ATTEMPT,
-    PLAYER_ID,
-    HIT,
-    VERTICAL,
-    HORIZONTAL,
-    OIL_RIG,
-    SHIP
-)
+from application.utils.const import *
 from application.entity.score import Score
 from application.entity.point import Point
 from application.entity.enemy_ship import EnemyShip
 from application.entity.ship import Ship
 import logging
+from math import floor
+from random import random
 
 logger = logging.getLogger('werkzeug')
 
@@ -38,6 +32,7 @@ class FireControl(object):
         self.hit_positions = []
         self.remain_ships = []
         self.high_prioritize = []
+        self.matrix = [[Score() for x in range(self.width)] for y in range(self.height)]
 
         # TODO use for data mining
         self.history_hit = []
@@ -66,10 +61,7 @@ class FireControl(object):
                                 Point(half_width, 0), Point(half_width, half_height), Point(half_width, height)]
 
     def fire(self):
-        next_fire = self.mining_data()
-        if next_fire:
-            return next_fire
-        return self.get_high_expect_positions()
+        return self.hunt_ship()
 
     def get_nearby_positions(self):
         high_expect_positions = []
@@ -80,14 +72,20 @@ class FireControl(object):
                 if high_expect_positions:
                     break
         if not high_expect_positions:
-            return self.fire_random()
+            return self.find_ship()
         return pick_random(high_expect_positions)
 
-    def fire_random(self):
+    def find_ship(self):
+        next_shot = self.mining_data()
+        if next_shot:
+            if not is_already_occupied(next_shot, self.fired_positions):
+                return next_shot
         if self.high_prioritize:
             next_shot = self.high_prioritize.pop(0)
             if not is_already_occupied(next_shot, self.fired_positions):
                 return next_shot
+        if FIND_ALGORITHM == SCORE:
+            return self.get_shot_coordinates()
         for i in range(0, MAX_ATTEMPT):
             fire = pick_random(self.remain_positions)
             near_positions = get_near_positions(fire, self.width, self.height)
@@ -116,6 +114,7 @@ class FireControl(object):
         if is_already_occupied(fire_point, self.remain_positions):
             remove_position(fire_point, self.remain_positions)
         self.fired_positions.append(fire_point)
+        self.matrix[shot_position['x']][shot_position['y']].fire = True
         if shot_result['status'] == HIT:
             self.history_hit.append(fire_point)
             self.hit_positions.append(fire_point)
@@ -123,12 +122,7 @@ class FireControl(object):
         if shot_result.get('recognizedWholeShip'):
             self.shipwreck(shot_result['recognizedWholeShip'])
 
-    # def get_chain_hit(self):
-    #     chain_hits = get_chain_position(self.hit_positions[0], self.hit_positions, self.width, self.height)
-    #     chain_hits.append(self.hit_positions[0])
-    #     return chain_hits
-
-    def get_high_expect_positions(self):
+    def hunt_ship(self):
         remain_positions = []
         for delta in range(0, 5):
             for position in self.hit_positions:
@@ -204,12 +198,62 @@ class FireControl(object):
 
         return line
 
-    def dynamic_matrix(self):
-        self.matrix = [[0 for x in range(self.width)] for y in range(self.height)]
+    def get_shot_coordinates(self):
+        high_score_n = 5
+        high_score_xs = [0, 0, 0, 0, 0, 0]
+        high_score_ys = [0, 0, 0, 0, 0, 0]
+        high_score_val = [0, 0, 0, 0, 0, 0]
+        score_picker = floor(random() * high_score_n)
         for x in range(self.width):
             for y in range(self.height):
+                if not self.matrix[x][y].fire:
+                    ltr = 0
+                    if x > 0:
+                        if self.matrix[x - 1][y]:
+                            ltr = self.matrix[x - 1][y].left_to_right
+                    ttb = 0
+                    if y > 0:
+                        if self.matrix[x][y - 1]:
+                            ttb = self.matrix[x][y - 1].top_to_bottom
+                else:
+                    ltr = -1
+                    ttb = -1
+                self.matrix[x][y] = Score(x, y, ltr, ttb)
+        for x in range(self.width, -1, -1):
+            for y in range(self.height, -1, -1):
                 if not self.matrix[x][y]:
-                    newXval = 0
+                    rtl = 0
+                    if x < self.width - 1:
+                        if self.matrix[x - 1][y]:
+                            rtl = self.matrix[x - 1][y].right_to_left
+                    btt = 0
+                    if y < self.height - 1:
+                        if self.matrix[x][y + 1]:
+                            btt = self.matrix[x][y + 1].bottom_to_top
+                else:
+                    rtl = -1
+                    btt = -1
+                self.matrix[x][y].add_xy(rtl, btt)
+
+                temp_score = self.matrix[x][y].get_score()
+                if temp_score > high_score_val[high_score_n]:
+                    for i in range(high_score_n):
+                        if temp_score > high_score_val[i]:
+                            high_score_xs.insert(i, x)
+                            high_score_ys.insert(i, y)
+                            high_score_val.insert(i, temp_score)
+                            break
+                elif temp_score == high_score_val[high_score_n]:
+                    if not floor(random()*7):
+                        for i in range(high_score_n):
+                            if temp_score > high_score_val[i]:
+                                high_score_xs.insert(i, x)
+                                high_score_ys.insert(i, y)
+                                high_score_val.insert(i, temp_score)
+                                break
+        if high_score_val[score_picker]:
+            return Point(high_score_xs[score_picker], high_score_ys[score_picker])
+        return Point(high_score_xs[0], high_score_ys[0])
 
     def mining_data(self):
         """

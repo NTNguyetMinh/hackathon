@@ -15,6 +15,11 @@ PLAYER_ID = 'money-or-feed'
 HIT = 'HIT'
 MISS = 'MISS'
 
+RANDOM = 1
+SCORE = 2
+
+FIND_ALGORITHM = SCORE
+
 SHIP = {
     CARRIER: {
         'pieces': 5,
