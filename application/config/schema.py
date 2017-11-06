@@ -26,7 +26,7 @@ schema_invite = {
         }
     }
 }
-
+# {  "sessionId": "xxx14","gameRule": {    "boardWidth": 20,    "boardHeight": 8,    "ships": [      {        "type": "CV",        "quantity": 4      },      {        "type": "BB",        "quantity": 4      },      {        "type": "OR",        "quantity": 4      },      {        "type": "CA",        "quantity": 4      },      {        "type": "DD",        "quantity": 4      }]}}
 schema_start = {
     'type': 'object',
     'properties': {
