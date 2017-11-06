@@ -28,7 +28,7 @@ class Invite(Base):
 
         # TODO store fire control to redis
         # TODO store board to redis
-        self.db.set('board', board)
-        self.db.set('fire_control', fire_control)
+        self.db.set('board_{}'.format(session_id), board)
+        self.db.set('fire_control_{}'.format(session_id), fire_control)
 
         return json.dumps({'success': True})

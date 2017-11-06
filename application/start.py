@@ -19,7 +19,8 @@ class Start(Base):
         print body
 
         # TODO get board from redis
-        board = self.db.get('board')
+        session_id = body['sessionId']
+        board = self.db.get('board_{}'.format(session_id))
 
         ships = []
         for ship in board.current_ship:

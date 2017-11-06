@@ -14,11 +14,12 @@ class Turn(Base):
         logger.info('Turn request: {}'.format(body))
         print body
         # TODO get fire control from redis
-        fire_control = self.db.get('fire_control')
+        session_id = body['sessionId']
+        fire_control = self.db.get('fire_control_{}'.format(session_id))
 
         fire_point = fire_control.fire()
         # TODO store fire control to redis
-        self.db.set('fire_control', fire_control)
+        self.db.set('fire_control_{}'.format(session_id), fire_control)
 
         response = {'firePosition': {
             'x': fire_point.x,
