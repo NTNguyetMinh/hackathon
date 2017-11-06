@@ -8,6 +8,9 @@ from application.entity.board import Board
 from application.fire_control import FireControl
 from flask import request
 import logging
+# from application.config.schema import schema_invite
+# from flask_inputs  import validators
+# from jsonschema import validate
 
 logger = logging.getLogger('werkzeug')
 
@@ -15,6 +18,11 @@ class Invite(Base):
 
     def execute(self):
         body = request.get_json()
+        #print request.data
+        #error_message = validate(request.data, schema_invite)
+        #print error_message
+        #if error_message:
+            #return error_message
         logger.info('Invite request: {}'.format(body))
         #
         print body
