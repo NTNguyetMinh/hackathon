@@ -32,12 +32,12 @@ class FireControl(object):
         self.hit_positions = []
         self.remain_ships = []
         self.high_prioritize = []
-        self.matrix = [[Score() for x in range(self.width)] for y in range(self.height)]
+        self.matrix = [[Score() for y in range(self.height)] for x in range(self.width)]
 
         # TODO use for data mining
         self.history_hit = []
 
-        self.init_high_prioritize(width, height)
+        # self.init_high_prioritize(width, height)
         for x in range(width):
             for y in range(height):
                 if (x + y) % 2 == 0:
@@ -208,9 +208,10 @@ class FireControl(object):
         high_score_xs = [0, 0, 0, 0, 0, 0]
         high_score_ys = [0, 0, 0, 0, 0, 0]
         high_score_val = [0, 0, 0, 0, 0, 0]
-        score_picker = floor(random() * high_score_n)
+        score_picker = int(floor(random() * high_score_n))
         for x in range(self.width):
             for y in range(self.height):
+                is_fire = False
                 if not self.matrix[x][y].fire:
                     ltr = 0
                     if x > 0:
@@ -223,14 +224,15 @@ class FireControl(object):
                 else:
                     ltr = -1
                     ttb = -1
-                self.matrix[x][y] = Score(x, y, ltr, ttb)
-        for x in range(self.width, -1, -1):
-            for y in range(self.height, -1, -1):
-                if not self.matrix[x][y]:
+                    is_fire = True
+                self.matrix[x][y] = Score(x, y, ltr + 1, ttb + 1, is_fire)
+        for x in range(self.width - 1, -1, -1):
+            for y in range(self.height - 1, -1, -1):
+                if not self.matrix[x][y].fire:
                     rtl = 0
                     if x < self.width - 1:
-                        if self.matrix[x - 1][y]:
-                            rtl = self.matrix[x - 1][y].right_to_left
+                        if self.matrix[x + 1][y]:
+                            rtl = self.matrix[x + 1][y].right_to_left
                     btt = 0
                     if y < self.height - 1:
                         if self.matrix[x][y + 1]:
@@ -238,7 +240,7 @@ class FireControl(object):
                 else:
                     rtl = -1
                     btt = -1
-                self.matrix[x][y].add_xy(rtl, btt)
+                self.matrix[x][y].add_xy(rtl + 1, btt + 1)
 
                 temp_score = self.matrix[x][y].get_score()
                 if temp_score > high_score_val[high_score_n]:
@@ -256,6 +258,7 @@ class FireControl(object):
                                 high_score_ys.insert(i, y)
                                 high_score_val.insert(i, temp_score)
                                 break
+        self.print_score()
         if high_score_val[score_picker]:
             return Point(high_score_xs[score_picker], high_score_ys[score_picker])
         return Point(high_score_xs[0], high_score_ys[0])
@@ -267,3 +270,14 @@ class FireControl(object):
         """
         # TODO chi viet ham mining data o day nhe
         return None
+
+    def print_score(self):
+        for y in range(self.height - 1, -1, -1):
+            line = 'y:' + str(y) + ' '
+            for x in range(0, self.width):
+                line += '  ' + str(self.matrix[x][y].get_score())
+            print line
+        line = 'x:  '
+        for x in range(0, self.width):
+            line += '  ' + str(x)
+        print line
