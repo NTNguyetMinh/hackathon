@@ -29,13 +29,13 @@ class Score(object):
         vertical_score = self.left_to_right + self.right_to_left - abs(self.left_to_right - self.right_to_left)
         horizontal_score = self.top_to_bottom + self.bottom_to_top - abs(self.top_to_bottom - self.bottom_to_top)
         score = vertical_score * horizontal_score
-        if score < 80:
+        if score < 180:
             self.score = score
 
         # 80% chance of getting 61
         elif floor(random()*5):
-            self.score = 61
+            self.score = 161
         # 20% chance of getting 67
         else:
-            self.score = 67
+            self.score = 167
         return self.score

@@ -161,8 +161,6 @@ class FireControl(object):
         """
         remain_position = []
         notin_ship = remove_occupied_position(self.hit_positions, ship.positions)
-        if ship.type == 'CV':
-            print 1
         if len(notin_ship) > delta:
             return remain_position
         for position in ship.positions:
@@ -241,26 +239,29 @@ class FireControl(object):
                     rtl = -1
                     btt = -1
                 self.matrix[x][y].add_xy(rtl + 1, btt + 1)
-
-                temp_score = self.matrix[x][y].get_score()
-                if temp_score > high_score_val[high_score_n]:
-                    for i in range(high_score_n):
-                        if temp_score > high_score_val[i]:
-                            high_score_xs.insert(i, x)
-                            high_score_ys.insert(i, y)
-                            high_score_val.insert(i, temp_score)
-                            break
-                elif temp_score == high_score_val[high_score_n]:
-                    if not floor(random()*7):
+                if (x + y) % 2 == 0:
+                    temp_score = self.matrix[x][y].get_score()
+                    if temp_score > high_score_val[high_score_n]:
                         for i in range(high_score_n):
                             if temp_score > high_score_val[i]:
                                 high_score_xs.insert(i, x)
                                 high_score_ys.insert(i, y)
                                 high_score_val.insert(i, temp_score)
                                 break
+                    elif temp_score == high_score_val[high_score_n]:
+                        if not floor(random()*7):
+                            for i in range(high_score_n):
+                                if temp_score > high_score_val[i]:
+                                    high_score_xs.insert(i, x)
+                                    high_score_ys.insert(i, y)
+                                    high_score_val.insert(i, temp_score)
+                                    break
         self.print_score()
-        if high_score_val[score_picker]:
-            return Point(high_score_xs[score_picker], high_score_ys[score_picker])
+        # if high_score_val[score_picker]:
+        for picker in range(len(high_score_val)):
+            point = Point(high_score_xs[score_picker], high_score_ys[score_picker])
+            if is_already_occupied(point, self.remain_positions):
+                return point
         return Point(high_score_xs[0], high_score_ys[0])
 
     def mining_data(self):
@@ -281,3 +282,14 @@ class FireControl(object):
         for x in range(0, self.width):
             line += '  ' + str(x)
         print line
+
+    def get_y(self, x, y):
+        if x % 2 == 0:
+            return y
+        else:
+            return y + 1
+
+    def get_pre_point_x(self, x, y):
+        if x % 2 == 0:
+            return self.matrix[x + 1][y]
+

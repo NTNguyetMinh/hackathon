@@ -45,7 +45,7 @@ def remove_position(position, occupied):
 
 
 def remove_occupied_position(positions, occupied):
-    return [position for position in positions if not is_already_occupied(position, occupied)]
+    return [position for position in occupied if not is_already_occupied(position, positions)]
 
 
 def is_double_occupied(positions, occupied):
