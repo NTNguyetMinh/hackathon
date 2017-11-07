@@ -3,13 +3,7 @@ from __future__ import (
     unicode_literals,
 )
 from application.entity.ship import Ship
-from application.utils.utils import (
-    init_position,
-    is_already_occupied,
-    get_near_positions,
-    is_double_occupied,
-    is_valid_position
-)
+from application.utils.utils import *
 from application.utils.const import MAX_ATTEMPT
 
 
@@ -69,17 +63,6 @@ class Board(object):
             if is_already_occupied(piece, self.allocates):
                 return False
             # Does not near any ship
-            if not self.is_nice_position(piece):
+            if is_stick_position(piece, self.allocates, self.width, self.height):
                 return False
-        return True
-
-    def is_nice_position(self, position):
-        """
-        A position is nice when it does not near any ships.
-        :param position: A position need to check
-        :return:
-        """
-        nears_position = get_near_positions(position, self.width, self.height)
-        if is_double_occupied(nears_position, self.allocates):
-            return False
         return True

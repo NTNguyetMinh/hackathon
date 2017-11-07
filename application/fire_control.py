@@ -2,15 +2,7 @@ from __future__ import (
     absolute_import,
     unicode_literals,
 )
-from application.utils.utils import (
-    is_already_occupied,
-    get_near_positions,
-    is_double_occupied,
-    is_valid_position,
-    remove_position,
-    remove_occupied_position,
-    pick_random
-)
+from application.utils.utils import *
 from application.utils.const import *
 from application.entity.score import Score
 from application.entity.point import Point
@@ -61,9 +53,52 @@ class FireControl(object):
                                 Point(half_width, 0), Point(half_width, half_height), Point(half_width, height)]
 
     def fire(self):
+        fire_position = None
+
+        # Hunt ship mode
         if self.hit_positions:
-            return self.hunt_ship()
-        return self.find_ship()
+
+            # Get hunt result
+            fire_position = self.hunt_ship()
+
+            # Fire nearby position when hunt fail
+            if not fire_position:
+                logger.error('Hunt fail.')
+                fire_position = self.get_nearby_positions()
+
+        # Find mode
+        if not fire_position:
+            fire_position = self.find_ship()
+        return fire_position
+
+    def handle_fire_result(self, response):
+        shot_result = response['shotResult']
+
+        # Does not handle when notify other player result
+        if shot_result['playerId'] != PLAYER_ID:
+            return True
+        shot_position = shot_result['position']
+        fire_point = Point(shot_position['x'], shot_position['y'])
+        # Remove remain position if this fire in it
+        if is_already_occupied(fire_point, self.remain_positions):
+            remove_position(fire_point, self.remain_positions)
+
+        # Append it in fire list
+        self.fired_positions.append(fire_point)
+
+        # Update status fire to matrix
+        self.matrix[shot_position['x']][shot_position['y']].fire = True
+
+        # Handle hit status
+        if shot_result['status'] == HIT:
+            self.history_hit.append(fire_point)
+
+            # Add to hit list
+            self.hit_positions.append(fire_point)
+
+        # Handle shipwreck
+        if shot_result.get('recognizedWholeShip'):
+            self.shipwreck(shot_result['recognizedWholeShip'])
 
     def get_nearby_positions(self):
         high_expect_positions = []
@@ -74,20 +109,23 @@ class FireControl(object):
                 if high_expect_positions:
                     break
         if not high_expect_positions:
-            return self.find_ship()
+            logger.error('Find nearby fail.')
+            return None
         return pick_random(high_expect_positions)
 
     def find_ship(self):
-        next_shot = self.mining_data()
-        if next_shot:
-            if not is_already_occupied(next_shot, self.fired_positions):
-                return next_shot
+        # next_shot = self.mining_data()
+        # if next_shot:
+        #     if not is_already_occupied(next_shot, self.fired_positions):
+        #         return next_shot
         if self.high_prioritize:
             next_shot = self.high_prioritize.pop(0)
             if not is_already_occupied(next_shot, self.fired_positions):
                 return next_shot
         if FIND_ALGORITHM == SCORE:
             return self.get_shot_coordinates()
+
+        # Try to find position which is not near any fired
         for i in range(0, MAX_ATTEMPT):
             fire = pick_random(self.remain_positions)
             near_positions = get_near_positions(fire, self.width, self.height)
@@ -105,24 +143,8 @@ class FireControl(object):
         for position in recognized_ship['positions']:
             ship_positions.append(Point(position['x'], position['y']))
 
+        # Remove ship position in hit position
         self.hit_positions = remove_occupied_position(ship_positions, self.hit_positions)
-
-    def handle_fire_result(self, response):
-        shot_result = response['shotResult']
-        if shot_result['playerId'] != PLAYER_ID:
-            return True
-        shot_position = shot_result['position']
-        fire_point = Point(shot_position['x'], shot_position['y'])
-        if is_already_occupied(fire_point, self.remain_positions):
-            remove_position(fire_point, self.remain_positions)
-        self.fired_positions.append(fire_point)
-        self.matrix[shot_position['x']][shot_position['y']].fire = True
-        if shot_result['status'] == HIT:
-            self.history_hit.append(fire_point)
-            self.hit_positions.append(fire_point)
-
-        if shot_result.get('recognizedWholeShip'):
-            self.shipwreck(shot_result['recognizedWholeShip'])
 
     def hunt_ship(self):
         remain_positions = []
@@ -140,18 +162,19 @@ class FireControl(object):
                         if ship_type != OIL_RIG and remain_position:
                             remain_positions.append(remain_position)
             if remain_positions:
-                logger.info('Remain positions: {}'.format(len(remain_positions)))
+                logger.info('Remain positions: {} after {} attempt'.format(len(remain_positions), delta))
                 break
-        # logger.info('Remain positions: {}'.format(render_position(remain_positions, self.width, self.height)))
         remain_positions.sort(key=lambda tub: len(tub))
         self.render_position(remain_positions)
         if remain_positions:
             return remain_positions[0][0]
-        return self.get_nearby_positions()
+        logger.info('Can not find any pattern ship.')
+        return None
 
     def remain_ship_type(self):
-        remain_types = [ship.type for ship in self.remain_ships]
-        return list(set(remain_types))
+        remain_types = list(set([ship.type for ship in self.remain_ships]))
+        logger.info('Remain ship type: {}'.format(', '.join(remain_types)))
+        return remain_types
 
     def get_remain_position(self, ship, delta):
         """
@@ -162,16 +185,23 @@ class FireControl(object):
         :return:
         """
         remain_position = []
-        notin_ship = remove_occupied_position(self.hit_positions, ship.positions)
-        if len(notin_ship) > delta:
+        # Get hit position which is not in ship
+        remain_hit = remove_occupied_position(ship.positions, self.hit_positions)
+        if len(remain_hit) > delta:
             return remain_position
+
+        # Validate this ship is valid or not
         for position in ship.positions:
             # Does not outside board
             if not is_valid_position(position, self.width, self.height):
                 return []
+
+            # Does not contain any miss fire
             if not is_already_occupied(position, self.hit_positions) and \
                     is_already_occupied(position, self.fired_positions):
                 return []
+
+            # Add positions which is not fire  yet
             if not is_already_occupied(position, self.fired_positions):
                 remain_position.append(position)
         return remain_position
@@ -208,7 +238,6 @@ class FireControl(object):
         high_score_xs = [0, 0, 0, 0, 0, 0]
         high_score_ys = [0, 0, 0, 0, 0, 0]
         high_score_val = [0, 0, 0, 0, 0, 0]
-        score_picker = int(floor(random() * high_score_n))
         for x in range(self.width):
             for y in range(self.height):
                 is_fire = False
@@ -261,18 +290,13 @@ class FireControl(object):
         self.print_score()
         # if high_score_val[score_picker]:
         for picker in range(len(high_score_val)):
-            point = Point(high_score_xs[score_picker], high_score_ys[score_picker])
-            if is_already_occupied(point, self.remain_positions):
+            point = Point(high_score_xs[picker], high_score_ys[picker])
+            if STICK_MODE:
+                if not is_stick_position(point, self.history_hit, self.width, self.height):
+                    return point
+            else:
                 return point
         return Point(high_score_xs[0], high_score_ys[0])
-
-    def mining_data(self):
-        """
-        Use mining data here
-        :return: - None: not found anything useful
-        """
-        # TODO chi viet ham mining data o day nhe
-        return None
 
     def print_score(self):
         for y in range(self.height - 1, -1, -1):
@@ -284,14 +308,3 @@ class FireControl(object):
         for x in range(0, self.width):
             line += '  ' + str(x)
         print line
-
-    def get_y(self, x, y):
-        if x % 2 == 0:
-            return y
-        else:
-            return y + 1
-
-    def get_pre_point_x(self, x, y):
-        if x % 2 == 0:
-            return self.matrix[x + 1][y]
-

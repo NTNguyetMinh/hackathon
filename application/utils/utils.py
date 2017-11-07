@@ -64,3 +64,16 @@ def get_chain_position(position, chains, width, height):
     near_positions = get_near_positions(position, width, height)
     return [point for point in chains if is_already_occupied(point, near_positions)]
 
+
+def is_stick_position(position, allocates, width, height):
+    """
+    A position is nice when it does not near any ships.
+    :param position: A position need to check
+    :return:
+    """
+    nears_position = get_near_positions(position, width, height)
+    if is_double_occupied(nears_position, allocates):
+        return True
+    return False
+
+
