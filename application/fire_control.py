@@ -173,7 +173,7 @@ class FireControl(object):
 
     def remain_ship_type(self):
         remain_types = list(set([ship.type for ship in self.remain_ships]))
-        logger.info('Remain ship type: {}'.format(', '.join(remain_types)))
+        logger.info('Remain ship types: {}'.format(', '.join(remain_types)))
         return remain_types
 
     def get_remain_position(self, ship, delta):
@@ -204,6 +204,7 @@ class FireControl(object):
             # Add positions which is not fire  yet
             if not is_already_occupied(position, self.fired_positions):
                 remain_position.append(position)
+        logger.debug('Match ship type: {}'.format(ship.type))
         return remain_position
 
     def render_position(self, positions):
