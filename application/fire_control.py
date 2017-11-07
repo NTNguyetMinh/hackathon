@@ -144,11 +144,11 @@ class FireControl(object):
             ship_positions.append(Point(position['x'], position['y']))
 
         # Remove ship position in hit position
-        self.hit_positions = remove_occupied_position(ship_positions, self.hit_positions)
+        self.hit_positions = remove_occupied_position(self.hit_positions, ship_positions)
 
     def hunt_ship(self):
         remain_positions = []
-        for delta in range(0, 5):
+        for delta in range(0, 10):
             for position in self.hit_positions:
                 for ship_type in self.remain_ship_type():
                     for ship_start in SHIP[ship_type][HORIZONTAL]:
@@ -186,7 +186,7 @@ class FireControl(object):
         """
         remain_position = []
         # Get hit position which is not in ship
-        remain_hit = remove_occupied_position(ship.positions, self.hit_positions)
+        remain_hit = remove_occupied_position(self.hit_positions, ship.positions)
         if len(remain_hit) > delta:
             return remain_position
 
