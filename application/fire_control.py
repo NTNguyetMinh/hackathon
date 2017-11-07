@@ -61,7 +61,9 @@ class FireControl(object):
                                 Point(half_width, 0), Point(half_width, half_height), Point(half_width, height)]
 
     def fire(self):
-        return self.hunt_ship()
+        if self.hit_positions:
+            return self.hunt_ship()
+        return self.find_ship()
 
     def get_nearby_positions(self):
         high_expect_positions = []
