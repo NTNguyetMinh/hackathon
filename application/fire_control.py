@@ -16,7 +16,7 @@ logger = logging.getLogger('werkzeug')
 
 
 class FireControl(object):
-    def __init__(self, width, height, ships):
+    def __init__(self, width, height, ships, allocates):
         self.width = width
         self.height = height
         self.remain_positions = []
@@ -24,7 +24,17 @@ class FireControl(object):
         self.hit_positions = []
         self.remain_ships = []
         self.high_prioritize = []
+        self.stick_mode = True
+        self.competitor_fire = []
+        self.follow_fire = False
+        self.stop_trace = False
         self.matrix = [[Score() for y in range(self.height)] for x in range(self.width)]
+        self.head_list = []
+        self.head_list_next = []
+        self.competitor = ''
+        self.remain_turn = 5
+
+        self.ship_allocates = allocates
 
         # TODO use for data mining
         self.history_hit = []
@@ -44,13 +54,9 @@ class FireControl(object):
                 self.remain_ships.append(ship)
 
     def init_high_prioritize(self, width, height):
-        half_width = int(width/2)
-        half_height = int(height/2)
         width -= 1
         height -= 1
-        self.high_prioritize = [Point(0, 0), Point(0, half_height), Point(0, height),
-                                Point(width, 0), Point(width, half_height), Point(width, height),
-                                Point(half_width, 0), Point(half_width, half_height), Point(half_width, height)]
+        self.high_prioritize = [Point(0, 0), Point(0, height), Point(width, 0), Point(width, height)]
 
     def fire(self):
         fire_position = None
@@ -59,7 +65,7 @@ class FireControl(object):
         if self.hit_positions:
 
             # Get hunt result
-            fire_position = self.hunt_ship()
+            fire_position = self.hunt_ship() if HUNT_MODE else None
 
             # Fire nearby position when hunt fail
             if not fire_position:
@@ -74,11 +80,13 @@ class FireControl(object):
     def handle_fire_result(self, response):
         shot_result = response['shotResult']
 
-        # Does not handle when notify other player result
-        if shot_result['playerId'] != PLAYER_ID:
-            return True
         shot_position = shot_result['position']
         fire_point = Point(shot_position['x'], shot_position['y'])
+
+        # Does not handle when notify other player result
+        if shot_result['playerId'] != PLAYER_ID:
+            return self.handle_competitor_fire(shot_result)
+
         # Remove remain position if this fire in it
         if is_already_occupied(fire_point, self.remain_positions):
             remove_position(fire_point, self.remain_positions)
@@ -96,9 +104,33 @@ class FireControl(object):
             # Add to hit list
             self.hit_positions.append(fire_point)
 
+        if is_already_occupied(fire_point, self.head_list):
+            remove_position(fire_point, self.head_list)
+            if shot_result['status'] == MISS:
+                self.remain_turn -= 1
+
         # Handle shipwreck
         if shot_result.get('recognizedWholeShip'):
             self.shipwreck(shot_result['recognizedWholeShip'])
+
+    def handle_competitor_fire(self, shot_result):
+        shot_position = shot_result['position']
+        fire_point = Point(shot_position['x'], shot_position['y'])
+
+        # Handle hit status
+        if shot_result['status'] == HIT:
+            # Remove remain position if this fire in it
+            if is_already_occupied(fire_point, self.ship_allocates):
+                remove_position(fire_point, self.ship_allocates)
+            self.stop_trace = True
+
+        elif not self.stop_trace:
+            self.competitor_fire.append(fire_point)
+            if self.follow_fire:
+                logger.error('IT IS FOLLOW FIRE.')
+                self.follow_fire = is_already_occupied(fire_point, self.fired_positions)
+        if shot_result.get('recognizedWholeShip'):
+            self.stop_trace = False
 
     def get_nearby_positions(self):
         high_expect_positions = []
@@ -118,16 +150,31 @@ class FireControl(object):
         # if next_shot:
         #     if not is_already_occupied(next_shot, self.fired_positions):
         #         return next_shot
+        if self.head_list and self.remain_turn > 0 and self.competitor in HISTORY_FIRE:
+            next_shot = self.head_list[0]
+            if not is_already_occupied(next_shot, self.fired_positions):
+                return next_shot
+            else:
+                self.remain_turn -= 1
+
         if self.high_prioritize:
             next_shot = self.high_prioritize.pop(0)
             if not is_already_occupied(next_shot, self.fired_positions):
                 return next_shot
+
         if FIND_ALGORITHM == SCORE:
-            return self.get_shot_coordinates()
+            next_shot = self.get_shot_coordinates()
+            if next_shot:
+                return next_shot
 
         # Try to find position which is not near any fired
         for i in range(0, MAX_ATTEMPT):
             fire = pick_random(self.remain_positions)
+            if len(self.ship_allocates) <= 10 and self.follow_fire:
+                if is_already_occupied(fire, self.ship_allocates) and len(self.remain_positions) > 5:
+                    continue
+            if not self.stick_mode:
+                return fire
             near_positions = get_near_positions(fire, self.width, self.height)
             if not is_double_occupied(near_positions, self.fired_positions):
                 return fire
@@ -142,6 +189,7 @@ class FireControl(object):
         ship_positions = []
         for position in recognized_ship['positions']:
             ship_positions.append(Point(position['x'], position['y']))
+        self.head_list_next.append(ship_positions[0])
 
         # Remove ship position in hit position
         self.hit_positions = remove_occupied_position(self.hit_positions, ship_positions)
@@ -243,11 +291,11 @@ class FireControl(object):
             for y in range(self.height):
                 is_fire = False
                 if not self.matrix[x][y].fire:
-                    ltr = 0
+                    ltr = 1
                     if x > 0:
                         if self.matrix[x - 1][y]:
                             ltr = self.matrix[x - 1][y].left_to_right
-                    ttb = 0
+                    ttb = 1
                     if y > 0:
                         if self.matrix[x][y - 1]:
                             ttb = self.matrix[x][y - 1].top_to_bottom
@@ -259,11 +307,11 @@ class FireControl(object):
         for x in range(self.width - 1, -1, -1):
             for y in range(self.height - 1, -1, -1):
                 if not self.matrix[x][y].fire:
-                    rtl = 0
+                    rtl = 2
                     if x < self.width - 1:
                         if self.matrix[x + 1][y]:
                             rtl = self.matrix[x + 1][y].right_to_left
-                    btt = 0
+                    btt = 2
                     if y < self.height - 1:
                         if self.matrix[x][y + 1]:
                             btt = self.matrix[x][y + 1].bottom_to_top
@@ -290,14 +338,20 @@ class FireControl(object):
                                     break
         self.print_score()
         # if high_score_val[score_picker]:
+        fire_position = None
         for picker in range(len(high_score_val)):
             point = Point(high_score_xs[picker], high_score_ys[picker])
-            if STICK_MODE:
+            if len(self.ship_allocates) <= 10 and self.follow_fire:
+                if is_already_occupied(point, self.ship_allocates) and len(self.remain_positions) > 5:
+                    continue
+            if self.stick_mode:
                 if not is_stick_position(point, self.history_hit, self.width, self.height):
-                    return point
+                    fire_position = point
+                    break
             else:
-                return point
-        return Point(high_score_xs[0], high_score_ys[0])
+                fire_position = point
+                break
+        return fire_position
 
     def print_score(self):
         for y in range(self.height - 1, -1, -1):

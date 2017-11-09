@@ -16,7 +16,11 @@ class Db(object):
         self.db.set(key, pickle.dumps(obj))
 
     def get(self, key):
-        return pickle.loads(self.db.get(key))
+        value = self.db.get(key)
+        if value:
+            return pickle.loads(value)
+        else:
+            return None
 
 db = Db(REDIS_HOST, REDIS_PORT, REDIS_DB)
 

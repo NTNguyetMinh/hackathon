@@ -32,7 +32,10 @@ class Invite(Base):
         board = Board(game_rule['boardWidth'], game_rule['boardHeight'])
         board.init_ships(game_rule['ships'])
 
-        fire_control = FireControl(game_rule['boardWidth'], game_rule['boardHeight'], game_rule['ships'])
+        fire_control = FireControl(game_rule['boardWidth'],
+                                   game_rule['boardHeight'],
+                                   game_rule['ships'],
+                                   board.allocates)
 
         # TODO store fire control to redis
         # TODO store board to redis

@@ -5,6 +5,10 @@ CRUISER = 'CA'
 DESTROYER = 'DD'
 OIL_RIG = 'OR'
 
+NON_STICK_P = []
+STICK_P = [u'cpham30', u'chicken', u'baby']
+HISTORY_FIRE = [u'baby']
+
 HORIZONTAL = 'horizontal'
 VERTICAL = 'vertical'
 
@@ -19,7 +23,9 @@ RANDOM = 1
 SCORE = 2
 
 FIND_ALGORITHM = RANDOM
-STICK_MODE = True
+STICK_MODE = False
+HUNT_MODE = True
+HISTORY_MODE = False
 
 SHIP = {
     CARRIER: {

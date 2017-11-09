@@ -7,6 +7,8 @@ from flask import request
 from application.config.redis import Base
 import logging
 logger = logging.getLogger('werkzeug')
+
+
 class Turn(Base):
 
     def execute(self):
@@ -19,6 +21,7 @@ class Turn(Base):
 
         fire_point = fire_control.fire()
         # TODO store fire control to redis
+        self.db.set('head_list_{}'.format(fire_control.competitor), fire_control.head_list_next)
         self.db.set('fire_control_{}'.format(session_id), fire_control)
 
         response = {'firePosition': {
@@ -27,4 +30,3 @@ class Turn(Base):
         }}
 
         return json.dumps(response)
-
