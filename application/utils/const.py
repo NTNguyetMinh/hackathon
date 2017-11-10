@@ -7,7 +7,7 @@ OIL_RIG = 'OR'
 
 NON_STICK_P = []
 STICK_P = [u'cpham30', u'chicken', u'baby']
-HISTORY_FIRE = [u'baby']
+HISTORY_FIRE = [u'baby', u'chicken', u'paladin']
 
 HORIZONTAL = 'horizontal'
 VERTICAL = 'vertical'
@@ -22,10 +22,12 @@ MISS = 'MISS'
 RANDOM = 1
 SCORE = 2
 
-FIND_ALGORITHM = RANDOM
-STICK_MODE = False
+FIND_ALGORITHM = SCORE
+STICK_MODE = True
 HUNT_MODE = True
 HISTORY_MODE = False
+
+CUR_STICK_MODE = False
 
 SHIP = {
     CARRIER: {

@@ -146,6 +146,7 @@ class FireControl(object):
         return pick_random(high_expect_positions)
 
     def find_ship(self):
+        self.render_position([])
         # next_shot = self.mining_data()
         # if next_shot:
         #     if not is_already_occupied(next_shot, self.fired_positions):
@@ -264,6 +265,8 @@ class FireControl(object):
                     line += '  v'
                 elif is_already_occupied(Point(x, y), self.hit_positions):
                     line += '  o'
+                elif is_already_occupied(Point(x, y), self.history_hit):
+                    line += '  h'
                 elif is_already_occupied(Point(x, y), self.fired_positions):
                     line += '  x'
                 else:
@@ -287,15 +290,16 @@ class FireControl(object):
         high_score_xs = [0, 0, 0, 0, 0, 0]
         high_score_ys = [0, 0, 0, 0, 0, 0]
         high_score_val = [0, 0, 0, 0, 0, 0]
+        list_score = []
         for x in range(self.width):
             for y in range(self.height):
                 is_fire = False
                 if not self.matrix[x][y].fire:
-                    ltr = 1
+                    ltr = 0
                     if x > 0:
                         if self.matrix[x - 1][y]:
                             ltr = self.matrix[x - 1][y].left_to_right
-                    ttb = 1
+                    ttb = 0
                     if y > 0:
                         if self.matrix[x][y - 1]:
                             ttb = self.matrix[x][y - 1].top_to_bottom
@@ -307,11 +311,11 @@ class FireControl(object):
         for x in range(self.width - 1, -1, -1):
             for y in range(self.height - 1, -1, -1):
                 if not self.matrix[x][y].fire:
-                    rtl = 2
+                    rtl = 0
                     if x < self.width - 1:
                         if self.matrix[x + 1][y]:
                             rtl = self.matrix[x + 1][y].right_to_left
-                    btt = 2
+                    btt = 0
                     if y < self.height - 1:
                         if self.matrix[x][y + 1]:
                             btt = self.matrix[x][y + 1].bottom_to_top
@@ -320,27 +324,28 @@ class FireControl(object):
                     btt = -1
                 self.matrix[x][y].add_xy(rtl + 1, btt + 1)
                 if (x + y) % 2 == 0:
-                    temp_score = self.matrix[x][y].get_score()
-                    if temp_score > high_score_val[high_score_n]:
-                        for i in range(high_score_n):
-                            if temp_score > high_score_val[i]:
-                                high_score_xs.insert(i, x)
-                                high_score_ys.insert(i, y)
-                                high_score_val.insert(i, temp_score)
-                                break
-                    elif temp_score == high_score_val[high_score_n]:
-                        if not floor(random()*7):
-                            for i in range(high_score_n):
-                                if temp_score > high_score_val[i]:
-                                    high_score_xs.insert(i, x)
-                                    high_score_ys.insert(i, y)
-                                    high_score_val.insert(i, temp_score)
-                                    break
+                    list_score.append(self.matrix[x][y])
+                    # temp_score = self.matrix[x][y].get_score()
+                    # if temp_score > high_score_val[high_score_n]:
+                    #     for i in range(high_score_n):
+                    #         if temp_score > high_score_val[i]:
+                    #             high_score_xs.insert(i, x)
+                    #             high_score_ys.insert(i, y)
+                    #             high_score_val.insert(i, temp_score)
+                    #             break
+                    # elif temp_score == high_score_val[high_score_n]:
+                    #     if not floor(random()*7):
+                    #         for i in range(high_score_n):
+                    #             if temp_score > high_score_val[i]:
+                    #                 high_score_xs.insert(i, x)
+                    #                 high_score_ys.insert(i, y)
+                    #                 high_score_val.insert(i, temp_score)
+                    #                 break
+        list_score.sort(key=lambda tub: tub.get_score(), reverse=True)
         self.print_score()
-        # if high_score_val[score_picker]:
-        fire_position = None
-        for picker in range(len(high_score_val)):
-            point = Point(high_score_xs[picker], high_score_ys[picker])
+        for score in list_score:
+            point = Point(score.x, score.y)
+            logger.info('Point x: {}, y: {}, score: {}'.format(score.x, score.y, score.get_score()))
             if len(self.ship_allocates) <= 10 and self.follow_fire:
                 if is_already_occupied(point, self.ship_allocates) and len(self.remain_positions) > 5:
                     continue
@@ -363,3 +368,15 @@ class FireControl(object):
         for x in range(0, self.width):
             line += '  ' + str(x)
         print line
+
+    def match_ship(self, position):
+        for ship_type in self.remain_ship_type():
+            for ship_start in SHIP[ship_type][HORIZONTAL]:
+                ship = Ship(ship_type, position, HORIZONTAL, ship_start)
+                if not is_double_occupied(ship.positions, self.fired_positions):
+                    return True
+            for ship_start in SHIP[ship_type][VERTICAL]:
+                ship = Ship(ship_type, position, VERTICAL, ship_start)
+                if ship_type != OIL_RIG and not is_double_occupied(ship.positions, self.fired_positions):
+                    return True
+        return False
