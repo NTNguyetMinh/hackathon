@@ -325,35 +325,17 @@ class FireControl(object):
                 self.matrix[x][y].add_xy(rtl + 1, btt + 1)
                 if (x + y) % 2 == 0:
                     list_score.append(self.matrix[x][y])
-                    # temp_score = self.matrix[x][y].get_score()
-                    # if temp_score > high_score_val[high_score_n]:
-                    #     for i in range(high_score_n):
-                    #         if temp_score > high_score_val[i]:
-                    #             high_score_xs.insert(i, x)
-                    #             high_score_ys.insert(i, y)
-                    #             high_score_val.insert(i, temp_score)
-                    #             break
-                    # elif temp_score == high_score_val[high_score_n]:
-                    #     if not floor(random()*7):
-                    #         for i in range(high_score_n):
-                    #             if temp_score > high_score_val[i]:
-                    #                 high_score_xs.insert(i, x)
-                    #                 high_score_ys.insert(i, y)
-                    #                 high_score_val.insert(i, temp_score)
-                    #                 break
         list_score.sort(key=lambda tub: tub.get_score(), reverse=True)
         self.print_score()
+        fire_position = None
         for score in list_score:
             point = Point(score.x, score.y)
             logger.info('Point x: {}, y: {}, score: {}'.format(score.x, score.y, score.get_score()))
-            if len(self.ship_allocates) <= 10 and self.follow_fire:
-                if is_already_occupied(point, self.ship_allocates) and len(self.remain_positions) > 5:
-                    continue
-            if self.stick_mode:
+            if self.stick_mode and self.match_ship(point):
                 if not is_stick_position(point, self.history_hit, self.width, self.height):
                     fire_position = point
                     break
-            else:
+            elif self.match_ship(point):
                 fire_position = point
                 break
         return fire_position
@@ -373,10 +355,19 @@ class FireControl(object):
         for ship_type in self.remain_ship_type():
             for ship_start in SHIP[ship_type][HORIZONTAL]:
                 ship = Ship(ship_type, position, HORIZONTAL, ship_start)
-                if not is_double_occupied(ship.positions, self.fired_positions):
+                if self.valid_match_ship(ship.positions):
+                    logger.info('Match position x: {}, y: {}, ship: {}'.format(position.x, position.y, ship.type))
                     return True
             for ship_start in SHIP[ship_type][VERTICAL]:
                 ship = Ship(ship_type, position, VERTICAL, ship_start)
-                if ship_type != OIL_RIG and not is_double_occupied(ship.positions, self.fired_positions):
+                if ship_type != OIL_RIG and self.valid_match_ship(ship.positions):
+                    logger.info('Match position x: {}, y: {}, ship: {}'.format(position.x, position.y, ship.type))
                     return True
+        logger.info('Not match position x: {}, y: {}'.format(position.x, position.y))
         return False
+
+    def valid_match_ship(self, positions):
+        for position in positions:
+            if not is_valid_position(position, self.width, self.height):
+                return False
+        return not is_double_occupied(positions, self.fired_positions)

@@ -5,6 +5,7 @@ from __future__ import (
 from application.entity.ship import Ship
 from application.utils.utils import *
 from application.utils.const import MAX_ATTEMPT, CUR_STICK_MODE
+from random import randint
 
 
 class Board(object):
@@ -63,6 +64,6 @@ class Board(object):
             if is_already_occupied(piece, self.allocates):
                 return False
             # Does not near any ship
-            if CUR_STICK_MODE and is_stick_position(piece, self.allocates, self.width, self.height):
+            if not randint(0, 9) or is_stick_position(piece, self.allocates, self.width, self.height):
                 return False
         return True

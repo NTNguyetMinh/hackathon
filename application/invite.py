@@ -23,6 +23,7 @@ class Invite(Base):
         #print error_message
         #if error_message:
             #return error_message
+        # return json.dumps({'success': False})
         logger.info('Invite request: {}'.format(body))
         #
         print body
